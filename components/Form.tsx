@@ -56,7 +56,7 @@ export function Form({ itemId }: { itemId: number | string }) {
           </div>
         )}
         renderSelectedItem={(product) => (
-          <span className="font-medium">{product.name}</span>
+          <span className="font-medium truncate">{product.name}</span>
         )}
       />
 
