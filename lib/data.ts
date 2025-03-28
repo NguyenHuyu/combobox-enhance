@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+// lib/fakeSearchApi.ts
 
 const SUBJECT_NAMES = [
   "Nguyên lý kế toán",
@@ -38,20 +38,49 @@ function generateRandomSubject(id: number) {
   };
 }
 
+// Dataset chỉ sinh 1 lần khi import
 const DATASET = Array.from({ length: 2000 }, (_, i) =>
   generateRandomSubject(i + 1)
 );
 
-export async function GET(
-  _: Request,
-  { params }: { params: Promise<{ id: number }> }
-) {
-  const { id } = await params;
-  const found = DATASET.find((item) => item.id === id);
+export function getSearchResults({
+  page = 0,
+  size = 10,
+  filter,
+  value,
+}: {
+  page?: number;
+  size?: number;
+  filter?: keyof ReturnType<typeof generateRandomSubject>;
+  value?: string;
+}) {
+  let filtered = DATASET;
 
-  if (!found) {
-    return NextResponse.json({ message: "Not found" }, { status: 404 });
+  if (filter && value) {
+    const lowerVal = value.toLowerCase();
+    filtered = filtered.filter((item) => {
+      const fieldValue = item[filter];
+      return String(fieldValue).toLowerCase().includes(lowerVal);
+    });
   }
 
-  return NextResponse.json(found);
+  const totalElements = filtered.length;
+  const totalPages = Math.ceil(totalElements / size);
+  const start = page * size;
+  const end = start + size;
+  const content = filtered.slice(start, end);
+
+  return {
+    content,
+    totalPages,
+    totalElements,
+    size,
+    page,
+    sort: [],
+    numberOfElements: content.length,
+  };
+}
+
+export function getSubjectById(id: number) {
+  return DATASET.find((item) => item.id === id) || null;
 }

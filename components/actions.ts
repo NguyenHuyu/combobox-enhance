@@ -1,10 +1,7 @@
 "use server";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-const API_BASE = "http://localhost:3000/api";
-
-const headers = {
-  "Content-Type": "application/json",
-};
+import { getSearchResults, getSubjectById as getByIdFake } from "../lib/data";
 
 function handleError() {
   return {
@@ -13,18 +10,12 @@ function handleError() {
   };
 }
 
-async function fetchApi(url: string, options?: RequestInit) {
+export const fetchSubjects = async (page: number, size = 10) => {
   try {
-    const res = await fetch(url, {
-      headers,
-      ...options,
+    const data = getSearchResults({
+      page,
+      size,
     });
-
-    if (!res.ok) {
-      throw new Error(`API error: ${res.status} ${res.statusText}`);
-    }
-
-    const data = await res.json();
 
     return {
       data,
@@ -32,62 +23,63 @@ async function fetchApi(url: string, options?: RequestInit) {
       message: "Success",
     };
   } catch (error) {
-    console.error("API error:", error);
+    console.error("Fake API error:", error);
     return {
       data: null,
       ...handleError(),
     };
   }
-}
-
-function createUrl(baseUrl: string, params: Record<string, unknown>): string {
-  const query = new URLSearchParams();
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      query.append(key, String(value));
-    }
-  });
-
-  const queryString = query.toString();
-  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
-}
-
-export const fetchSubjects = async (
-  page: number,
-  size = 10,
-  filter?: string
-) => {
-  const url = createUrl(`${API_BASE}/search`, {
-    page,
-    size,
-    filter,
-  });
-
-  return fetchApi(url);
 };
 
 export const searchSubjects = async (
   queryText: string,
   page: number,
   size = 10,
-  filter?: string
+  filter?: any
 ) => {
-  // Nếu không có queryText, sử dụng fetchSubjects thay vì gọi API tìm kiếm
-  if (!queryText) {
-    return fetchSubjects(page, size, filter);
+  try {
+    const data = getSearchResults({
+      page,
+      size,
+      filter: filter || "id",
+      value: queryText,
+    });
+
+    return {
+      data,
+      statusCode: 200,
+      message: "Success",
+    };
+  } catch (error) {
+    console.error("Fake API search error:", error);
+    return {
+      data: null,
+      ...handleError(),
+    };
   }
-
-  const url = createUrl(`${API_BASE}/search`, {
-    page,
-    size,
-    filter,
-    value: queryText,
-  });
-
-  return fetchApi(url);
 };
 
 export const getSubjectById = async (id: string | number) => {
-  return fetchApi(`${API_BASE}/${id}`);
+  try {
+    const data = getByIdFake(Number(id));
+    if (!data) {
+      return {
+        data: null,
+        statusCode: 404,
+        message: "Not found",
+      };
+    }
+
+    return {
+      data,
+      statusCode: 200,
+      message: "Success",
+    };
+  } catch (error) {
+    console.error("Fake API getById error:", error);
+    return {
+      data: null,
+      ...handleError(),
+    };
+  }
 };
